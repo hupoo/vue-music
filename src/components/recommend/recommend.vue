@@ -1,43 +1,69 @@
 <template>
   <div class="recommend">
-    <div class="recommend-content">
-      <div v-if="recommends.length" class="slider-wrapper">
-        <slider>
-          <div
-          v-for="(item,index) in recommends"
-          :key="index">
-            <a :href="item.linkUrl">
-              <img :src="item.picUrl" alt="">
-            </a>
-          </div>
-        </slider>
+    <scroll ref="scroll" class="recommend-content" :data="discList">
+      <div>
+        <div v-if="recommends.length" class="slider-wrapper">
+          <slider>
+            <div
+            v-for="(item,index) in recommends"
+            :key="index">
+              <a :href="item.linkUrl">
+                <img :src="item.picUrl" alt="">
+              </a>
+            </div>
+          </slider>
+        </div>
+        <div class="recommend-list">
+          <h1 class="list-title">热门歌单推荐</h1>
+          <ul>
+            <li class="item" v-for="(item,index) in discList" :key="index">
+              <div class="icon">
+                <img class="needsClick" @load="loadImage" width="60" height="60" v-lazy="item.imgUrl" />
+              </div>
+              <div class="text">
+                <h2 class="name" v-html="item.creator.name"></h2>
+                <p class="desc" v-html="item.dissname"></p>
+              </div>
+            </li>
+          </ul>
+        </div>
       </div>
-      <div class="recommend-list">
-        <h1 class="list-title">热门歌单推荐</h1>
-        <ul>
-
-        </ul>
+      <div class="loading-container" v-show="!discList.length">
+        <loading></loading>
       </div>
-    </div>
-    推荐页面
+    </scroll>
   </div>
 </template>
 
 <script type="text/ecmascript-6">
 import Slider from 'base/slider/slider'
-import { getRecommend } from 'api/recommend'
+import Scroll from 'base/scroll/scroll'
+import Loading from 'base/loading/loading'
+import { getRecommend, getDisList } from 'api/recommend'
 import { ERR_OK } from 'api/config'
 export default {
   components: {
-    Slider
+    Scroll,
+    Slider,
+    Loading
   },
   data () {
     return {
-      recommends: []
+      checkLoaded: false,
+      recommends: [],
+      discList: [{
+        imgUrl: 'https://avatars3.githubusercontent.com/u/43479428?v=4',
+        creator: {
+          name: '古风圈'
+        },
+        dissname: '尤雨溪开发的专注于构建用户界面的渐进式框架。'
+      }
+      ]
     }
   },
   created () {
     this._getRecommend()
+    this._getDisList()
   },
   methods: {
     _getRecommend () {
@@ -46,6 +72,20 @@ export default {
           this.recommends = res.data.slider
         }
       })
+    },
+    _getDisList () {
+      getDisList().then((res) => {
+        if (res.code === ERR_OK) {
+          // this.DisList = res.data.slider
+          console.log(res.data.slider)
+        }
+      })
+    },
+    loadImage () {
+      if (!this.checkLoaded) {
+        this.$refs.scroll.refresh()
+        this.checkLoaded = true
+      }
     }
   }
 }
@@ -53,7 +93,6 @@ export default {
 
 <style scoped lang="stylus" rel="stylesheet/stylus">
   @import "~common/stylus/variable"
-
 .recommend
   position: fixed
   width: 100%
